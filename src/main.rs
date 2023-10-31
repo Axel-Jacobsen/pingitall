@@ -12,6 +12,7 @@ use pnet::transport::transport_channel;
 use pnet::transport::TransportChannelType::Layer4;
 use pnet::transport::TransportProtocol::Ipv4;
 
+
 fn construct_packet(send_buffer: &mut [u8]) -> Result<EchoRequestPacket, String> {
     let mut echo_req_packet = match MutableEchoRequestPacket::new(send_buffer) {
         Some(packet) => packet,
@@ -28,6 +29,7 @@ fn construct_packet(send_buffer: &mut [u8]) -> Result<EchoRequestPacket, String>
     Ok(echo_req_packet.consume_to_immutable())
 }
 
+
 #[allow(unused_variables)]
 fn main() {
     let target_ip = IpAddr::V4("8.8.8.8".parse().unwrap());
@@ -40,7 +42,7 @@ fn main() {
     let echo_req_packet = match construct_packet(send_buffer.as_mut()) {
         Ok(packet) => packet,
         Err(e) => panic!(
-            "Failed to construct packet, most likely because of too small of a send buffer: {:?}",
+            "Failed to construct packet, most likely because the send buffer is too small: {}",
             e
         ),
     };
