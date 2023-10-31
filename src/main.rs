@@ -21,6 +21,7 @@ fn construct_packet(send_buffer: &mut [u8]) -> Result<EchoRequestPacket, String>
     echo_req_packet.set_icmp_type(IcmpTypes::EchoRequest);
     echo_req_packet.set_sequence_number(1);
     echo_req_packet.set_identifier(0x88F8);
+
     let packet_checksum = checksum(echo_req_packet.packet(), 1);
     echo_req_packet.set_checksum(packet_checksum);
 
@@ -50,15 +51,9 @@ fn main() {
     let mut icmp_iter = icmp_packet_iter(&mut rx);
     match icmp_iter.next() {
         Ok((packet, addr)) => match packet.get_icmp_type() {
-            IcmpTypes::EchoReply => {
-                println!("Received Echo Reply");
-            }
-            _ => {
-                println!("Received unexpected packet");
-            }
+            IcmpTypes::EchoReply => println!("Received Echo Reply"),
+            _ => println!("Received unexpected packet"),
         },
-        Err(e) => {
-            println!("Failed to receive packet: {:?}", e);
-        }
+        Err(e) => println!("Failed to receive packet: {:?}", e),
     }
 }
