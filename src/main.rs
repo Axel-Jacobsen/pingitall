@@ -52,17 +52,23 @@ fn ping(ip_str: &str) {
     let mut icmp_iter = icmp_packet_iter(&mut rx);
     match icmp_iter.next() {
         Ok((packet, addr)) => match packet.get_icmp_type() {
-            IcmpTypes::EchoReply => {
-                println!("Received Echo Reply");
-                println!("Time: {:?}", start.elapsed());
-                println!("Received from: {}", addr);
-            }
+            IcmpTypes::EchoReply => println!("{} {:?}", addr, start.elapsed()),
             _ => println!("Received unexpected packet"),
         },
         Err(e) => println!("Failed to receive packet: {:?}", e),
     }
 }
 
+fn numbers_to_string(n0: u8, n1: u8, n2: u8, n3: u8) -> String {
+    // format numbers into ip-like string (n0.n1.n2.n3)
+    format!("{}.{}.{}.{}", n0, n1, n2, n3)
+}
+
 fn main() {
     ping("8.8.8.8");
+    // println!("{:?}", numbers_to_string(1, 2, 3, 4));
+    for i in 0..255 {
+        ping(&numbers_to_string(i, i, i, i));
+        println!("hi");
+    }
 }
