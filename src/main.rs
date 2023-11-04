@@ -1,6 +1,5 @@
 use std::net::IpAddr;
-use std::time::{Instant,Duration};
-
+use std::time::{Duration, Instant};
 
 use pnet::util::checksum;
 
@@ -43,26 +42,31 @@ fn ping(ip_str: &str) {
     let echo_req_packet = match construct_packet(send_buffer.as_mut()) {
         Ok(packet) => packet,
         Err(e) => panic!(
-            "Failed to construct packet, most likely because the send buffer is too small: {}",
+            "failed to construct packet, most likely because the send buffer is too small: {}",
             e
         ),
     };
 
     let start = Instant::now();
     tx.send_to(echo_req_packet, target_ip)
-        .expect("Failed to send packet");
+        .expect("failed to send packet");
 
     let mut icmp_iter = icmp_packet_iter(&mut rx);
 
-    match icmp_iter.next_with_timeout(Duration::from_millis(1000)) {
-        Ok(response) => match response {
-            Some((packet, _)) => match packet.get_icmp_type() {
-                IcmpTypes::EchoReply => println!("{:?}", start.elapsed()),
-                _ => println!("Received unexpected packet {:?}", packet),
-            },
-            None => println!("Timed out"),
+    let maybe_packet = match icmp_iter.next_with_timeout(Duration::from_millis(1000)) {
+        Ok(response) => response,
+        Err(e) => {
+            println!("failed to receive packet: {:?}", e);
+            return;
+        }
+    };
+
+    match maybe_packet {
+        Some((packet, _)) => match packet.get_icmp_type() {
+            IcmpTypes::EchoReply => println!("{:?}", start.elapsed()),
+            _ => println!("received unexpected packet {:?}", packet),
         },
-        Err(e) => println!("Failed to receive packet: {:?}", e),
+        None => println!("timed out"),
     }
 }
 
