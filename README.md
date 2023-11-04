@@ -24,6 +24,6 @@ for i in 0..=255 {
 }
 ```
 
-But that'll take a while. There are $256^4$ ip addresses, which is nearly 4.3 billion. Waiting for a response for each would take, at worst, 4.3 billion seconds, which is roughly 90 years, and at that point the internet will probably have transitioned to ipv6, so I'd have to just start all over again.
+But that'll take a while. There are $256^4$ ip addresses, which is nearly 4.3 billion. Waiting for a response for each would take, at worst, 4.3 billion seconds (at a $1~s$ timeout), which is roughly 136 years, and at that point the internet will probably have transitioned to ipv6, so I'd have to just start all over again.
 
 ## Plan v2: just like make a lot of threads, man
