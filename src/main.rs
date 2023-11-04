@@ -1,5 +1,6 @@
 use std::net::IpAddr;
-use std::time::Instant;
+use std::time::{Instant,Duration};
+use std::thread;
 
 use pnet::util::checksum;
 
@@ -33,6 +34,8 @@ fn ping(ip_str: &str) {
     let target_ip = IpAddr::V4(ip_str.parse().unwrap());
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Icmp));
 
+    print!("pinging {}... ", ip_str);
+
     let (mut tx, mut rx) =
         transport_channel(64, protocol).expect("failed to make transport channel");
 
@@ -50,10 +53,14 @@ fn ping(ip_str: &str) {
         .expect("Failed to send packet");
 
     let mut icmp_iter = icmp_packet_iter(&mut rx);
-    match icmp_iter.next() {
-        Ok((packet, addr)) => match packet.get_icmp_type() {
-            IcmpTypes::EchoReply => println!("{} {:?}", addr, start.elapsed()),
-            _ => println!("Received unexpected packet"),
+
+    match icmp_iter.next_with_timeout(Duration::from_millis(1000)) {
+        Ok(response) => match response {
+            Some((packet, _)) => match packet.get_icmp_type() {
+                IcmpTypes::EchoReply => println!("{:?}", start.elapsed()),
+                _ => println!("Received unexpected packet {:?}", packet),
+            },
+            None => println!("Timed out"),
         },
         Err(e) => println!("Failed to receive packet: {:?}", e),
     }
@@ -65,10 +72,8 @@ fn numbers_to_string(n0: u8, n1: u8, n2: u8, n3: u8) -> String {
 }
 
 fn main() {
-    ping("8.8.8.8");
     // println!("{:?}", numbers_to_string(1, 2, 3, 4));
-    for i in 0..255 {
+    for i in 0..=255 {
         ping(&numbers_to_string(i, i, i, i));
-        println!("hi");
     }
 }
