@@ -1,3 +1,4 @@
+use std::thread;
 use std::net::IpAddr;
 use std::time::{Duration, Instant};
 
@@ -29,11 +30,9 @@ fn construct_packet(send_buffer: &mut [u8]) -> Result<EchoRequestPacket, String>
     Ok(echo_req_packet.consume_to_immutable())
 }
 
-fn ping(ip_str: &str) {
+fn ping(ip_str: String) {
     let target_ip = IpAddr::V4(ip_str.parse().unwrap());
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Icmp));
-
-    print!("pinging {}... ", ip_str);
 
     let (mut tx, mut rx) =
         transport_channel(64, protocol).expect("failed to make transport channel");
@@ -62,11 +61,11 @@ fn ping(ip_str: &str) {
     };
 
     match maybe_packet {
-        Some((packet, _)) => match packet.get_icmp_type() {
-            IcmpTypes::EchoReply => println!("{:?}", start.elapsed()),
+        Some((packet, addr)) => match packet.get_icmp_type() {
+            IcmpTypes::EchoReply => println!("{} {:?}", addr, start.elapsed()),
             _ => println!("received unexpected packet {:?}", packet),
         },
-        None => println!("timed out"),
+        None => (),
     }
 }
 
@@ -76,8 +75,17 @@ fn numbers_to_string(n0: u8, n1: u8, n2: u8, n3: u8) -> String {
 }
 
 fn main() {
-    // println!("{:?}", numbers_to_string(1, 2, 3, 4));
+    let mut threads: Vec<thread::JoinHandle<()>> = vec![];
+
     for i in 0..=255 {
-        ping(&numbers_to_string(i, i, i, i));
+        let ip_str = numbers_to_string(i, i, i, i);
+        threads.push(thread::spawn(move || ping(ip_str)));
+    }
+
+    for thread in threads {
+        match thread.join() {
+            Ok(_) => (),
+            Err(e) => panic!("failed to join thread: {:?}", e),
+        }
     }
 }
