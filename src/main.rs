@@ -31,7 +31,8 @@ fn construct_packet(send_buffer: &mut [u8]) -> Result<EchoRequestPacket, String>
     Ok(echo_req_packet.consume_to_immutable())
 }
 
-async fn ping(ip_str: String) {
+fn ping(ip_str: String) {
+    println!("pinging {}", ip_str);
     let target_ip = IpAddr::V4(ip_str.parse().unwrap());
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Icmp));
 
@@ -55,10 +56,7 @@ async fn ping(ip_str: String) {
 
     let maybe_packet = match icmp_iter.next_with_timeout(Duration::from_millis(1000)) {
         Ok(response) => response,
-        Err(e) => {
-            println!("failed to receive packet: {:?}", e);
-            return;
-        }
+        Err(e) => panic!("failed to receive packet: {:?}", e),
     };
 
     match maybe_packet {
@@ -68,6 +66,13 @@ async fn ping(ip_str: String) {
         },
         None => (),
     }
+    println!("pung")
+}
+
+async fn aping(ip_str: String) {
+    tokio::task::spawn_blocking(move || ping(ip_str))
+        .await
+        .expect("The blocking task failed");
 }
 
 fn numbers_to_string(n0: u8, n1: u8, n2: u8, n3: u8) -> String {
@@ -82,8 +87,9 @@ async fn main() {
             for k in 0..=255 {
                 let mut futs = Vec::new();
                 for l in 0..=255 {
-                    let ip_str = numbers_to_string(i, j, k, l);
-                    futs.push(ping(ip_str));
+                    futs.push(
+                        aping(numbers_to_string(i, j, k, l))
+                    );
                 }
                 join_all(futs).await;
             }
