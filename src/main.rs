@@ -79,14 +79,14 @@ fn numbers_to_string(n0: u8, n1: u8, n2: u8, n3: u8) -> String {
 async fn main() {
     for i in 0..=255 {
         for j in 0..=255 {
-            let mut futs = Vec::new();
             for k in 0..=255 {
+                let mut futs = Vec::new();
                 for l in 0..=255 {
                     let ip_str = numbers_to_string(i, j, k, l);
                     futs.push(ping(ip_str));
                 }
+                join_all(futs).await;
             }
-            join_all(futs).await;
         }
     }
 }
