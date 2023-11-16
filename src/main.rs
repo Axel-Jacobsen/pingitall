@@ -15,6 +15,7 @@ use pnet::transport::transport_channel;
 use pnet::transport::TransportChannelType::Layer4;
 use pnet::transport::TransportProtocol::Ipv4;
 
+
 fn construct_packet(send_buffer: &mut [u8]) -> Result<EchoRequestPacket, String> {
     let mut echo_req_packet = match MutableEchoRequestPacket::new(send_buffer) {
         Some(packet) => packet,
@@ -54,19 +55,18 @@ fn ping(ip_str: String) {
 
     let mut icmp_iter = icmp_packet_iter(&mut rx);
 
-    let maybe_packet = match icmp_iter.next_with_timeout(Duration::from_millis(1000)) {
+    let packet = match icmp_iter.next_with_timeout(Duration::from_millis(1000)) {
         Ok(response) => response,
         Err(e) => panic!("failed to receive packet: {:?}", e),
     };
 
-    match maybe_packet {
+    match packet {
         Some((packet, addr)) => match packet.get_icmp_type() {
             IcmpTypes::EchoReply => println!("{} {:?}", addr, start.elapsed()),
             _ => println!("received unexpected packet {:?}", packet),
         },
         None => (),
     }
-    println!("pung")
 }
 
 async fn aping(ip_str: String) {
@@ -84,15 +84,15 @@ fn numbers_to_string(n0: u8, n1: u8, n2: u8, n3: u8) -> String {
 async fn main() {
     for i in 0..=255 {
         for j in 0..=255 {
+            let mut futs = Vec::new();
             for k in 0..=255 {
-                let mut futs = Vec::new();
                 for l in 0..=255 {
                     futs.push(
                         aping(numbers_to_string(i, j, k, l))
                     );
                 }
-                join_all(futs).await;
             }
+            join_all(futs).await;
         }
     }
 }
